@@ -1,6 +1,26 @@
 <?php
 session_start(); // Starts a session to store and persist user data across page reloads
 
+// Variables used for form handling and temporary data storage
+$fullname = "";
+$position = "";
+$dateOfEmployment = "";
+$salary = "";
+$bonusRate = "";
+
+// Initialize employee session array if it does not exist yet
+if (!isset($_SESSION['employees'])) {
+    $_SESSION['employees'] = [];
+}
+
+// Predefined salary and bonus rate based on employee position
+$compensation = [
+    'Manager'   => ['salary' => 7000, 'bonusRate' => 0.20],
+    'Developer' => ['salary' => 5000, 'bonusRate' => 0.10],
+    'Designer'  => ['salary' => 4000, 'bonusRate' => 0.05],
+    'Intern'    => ['salary' => 2000, 'bonusRate' => 0.00],
+];
+
 // Employee class that stores employee attributes such as full name, position, date of employment, salary, and annual bonus rate.
 class Employee {
     private $fullname;
@@ -63,36 +83,6 @@ class Employee {
     }
 }
 
-// Variables used for form handling and temporary data storage
-$fullname = "";
-$position = "";
-$dateOfEmployment = "";
-$salary = "";
-$bonusRate = "";
-
-// Initialize employee session array if it does not exist yet
-if (!isset($_SESSION['employees'])) {
-    $_SESSION['employees'] = [];
-}
-
-// Predefined salary and bonus rate based on employee position
-$compensation = [
-    'Manager'   => ['salary' => 7000, 'bonusRate' => 0.20],
-    'Developer' => ['salary' => 5000, 'bonusRate' => 0.10],
-    'Designer'  => ['salary' => 4000, 'bonusRate' => 0.05],
-    'Intern'    => ['salary' => 2000, 'bonusRate' => 0.00],
-];
-
-// Handles employee deletion request
-if (isset($_POST['deleteIndex'])) {
-    // Removes an employee from the session array based on its index
-    array_splice($_SESSION['employees'], $_POST['deleteIndex'], 1);
-
-    // Redirect to prevent form resubmission on refresh
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit();
-}
-
 // Handles employee update (edit/save) request
 if (isset($_POST['updateIndex'])) {
     $index = $_POST['updateIndex']; // Index of employee to be updated
@@ -118,9 +108,18 @@ if (isset($_POST['updateIndex'])) {
     exit();
 }
 
+// Handles employee deletion request
+if (isset($_POST['deleteIndex'])) {
+    // Removes an employee from the session array based on its index
+    array_splice($_SESSION['employees'], $_POST['deleteIndex'], 1);
+
+    // Redirect to prevent form resubmission on refresh
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
 // Stores error message for form validation
 $error = "";
-
 // Handles adding a new employee
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['addEmployee'])) {
 
