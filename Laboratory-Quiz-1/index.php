@@ -1,6 +1,7 @@
 <?php
-session_start();
+session_start(); // Starts a session to store and persist user data across page reloads
 
+// Employee class that stores employee attributes such as full name, position, date of employment, salary, and annual bonus rate.
 class Employee {
     private $fullname;
     private $position;
@@ -8,6 +9,7 @@ class Employee {
     private $salary;
     private $bonusRate;
 
+    // Class constructor to create an Employee object with initial values
     public function __construct($fullname, $position, $dateOfEmployment, $salary, $bonusRate) {
         $this->fullname = $fullname;
         $this->position = $position;
@@ -16,6 +18,7 @@ class Employee {
         $this->bonusRate = $bonusRate;
     }
 
+    // Getter methods to retrieve employee attributes
     public function getFullName() { 
         return $this->fullname; 
     }
@@ -32,6 +35,7 @@ class Employee {
         return $this->bonusRate; 
     }
 
+    // Setter methods to update employee attributes
     public function setFullName($fullname) { 
         $this->fullname = $fullname; 
     }
@@ -48,19 +52,30 @@ class Employee {
         $this->bonusRate = $bonusRate; 
     }
 
+    // Calculates the employee's total annual bonus
     public function getAnnualBonus() {
         return ($this->salary * 12) * $this->bonusRate;
     }
 
+    // Calculates the employee's total annual salary including bonus
     public function getAnnualSalary() {
         return ($this->salary * 12) + $this->getAnnualBonus();
     }
 }
 
+// Variables used for form handling and temporary data storage
+$fullname = "";
+$position = "";
+$dateOfEmployment = "";
+$salary = "";
+$bonusRate = "";
+
+// Initialize employee session array if it does not exist yet
 if (!isset($_SESSION['employees'])) {
     $_SESSION['employees'] = [];
 }
 
+// Predefined salary and bonus rate based on employee position
 $compensation = [
     'Manager'   => ['salary' => 7000, 'bonusRate' => 0.20],
     'Developer' => ['salary' => 5000, 'bonusRate' => 0.10],
@@ -68,50 +83,77 @@ $compensation = [
     'Intern'    => ['salary' => 2000, 'bonusRate' => 0.00],
 ];
 
+// Handles employee deletion request
 if (isset($_POST['deleteIndex'])) {
+    // Removes an employee from the session array based on its index
     array_splice($_SESSION['employees'], $_POST['deleteIndex'], 1);
+
+    // Redirect to prevent form resubmission on refresh
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 
+// Handles employee update (edit/save) request
 if (isset($_POST['updateIndex'])) {
-    $index = $_POST['updateIndex'];
+    $index = $_POST['updateIndex']; // Index of employee to be updated
     $position = $_POST['position'];
     $salary = $compensation[$position]['salary'];
     $bonusRate = $compensation[$position]['bonusRate'];
 
+    // Retrieve selected employee object from session
     $employee = $_SESSION['employees'][$index];
+
+    // Update employee attributes
     $employee->setFullName(trim($_POST['fullname']));
     $employee->setPosition($position);
     $employee->setDateOfEmployment($_POST['dateOfEmployment']);
     $employee->setSalary($salary);
     $employee->setBonusRate($bonusRate);
 
+    // Save updated employee back into session array
     $_SESSION['employees'][$index] = $employee;
 
+    // Redirect to prevent duplicate form submission
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
 
+// Stores error message for form validation
 $error = "";
+
+// Handles adding a new employee
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['addEmployee'])) {
-    $fullname = trim($_POST['fullname']);
+
+    // Retrieve and sanitize form inputs
+    $fullname = trim($_POST['fullname']); 
     $position = $_POST['position'] ?? "";
     $dateOfEmployment = $_POST['dateOfEmployment'];
 
+    // Validate required fields
     if (empty($fullname) || empty($position) || empty($dateOfEmployment)) {
         $error = "*Please fill in all fields.";
     } else {
+
+        // Get salary and bonus rate based on selected position
         $salary = $compensation[$position]['salary'];
         $bonusRate = $compensation[$position]['bonusRate'];
 
-        $_SESSION['employees'][] = new Employee($fullname, $position, $dateOfEmployment, $salary, $bonusRate);
+        // Create new Employee object and store it in session
+        $_SESSION['employees'][] = new Employee(
+            $fullname, 
+            $position, 
+            $dateOfEmployment, 
+            $salary, 
+            $bonusRate
+        );
 
+        // Redirect to prevent duplicate submission
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
 }
 
+// Stores index of employee currently being edited
 $editIndex = isset($_POST['editIndex']) ? (int)$_POST['editIndex'] : -1;
 ?>
 
@@ -121,12 +163,13 @@ $editIndex = isset($_POST['editIndex']) ? (int)$_POST['editIndex'] : -1;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Management System</title>
+
     <style>
         body { 
             font-family: monospace; 
             padding: 20px; 
         }
-
+        
         table { 
             width: 100%; 
             border-collapse: collapse; 
@@ -184,97 +227,119 @@ $editIndex = isset($_POST['editIndex']) ? (int)$_POST['editIndex'] : -1;
             padding: 15px; 
             border-radius: 8px; 
         }
-
     </style>
 </head>
+
 <body>
+    <!-- Employee input form, used to add new employees to the system -->
+    <form method="POST" action="">
+        <fieldset>
+            <legend><h2>Employee Management System</h2></legend>
 
-<form method="POST">
-    <fieldset>
-        <legend><h2>Employee Management System</h2></legend>
-        <p class="error"><?php echo $error; ?></p>
+            <p class="error"><?php echo $error; ?></p>
 
-        <label><b>Full Name:</b></label>
-        <input type="text" name="fullname"> <br> <br>
-        
-        <label><b>Position:</b></label>
-        <select name="position">
-            <option value="" disabled selected>Select Position</option>
-            <option value="Manager">Manager</option>
-            <option value="Developer">Developer</option>
-            <option value="Designer">Designer</option>
-            <option value="Intern">Intern</option>
-        </select> <br> <br>
+            <label><b>Full Name:</b></label>
+            <input type="text" name="fullname"> <br><br>
+            
+            <label><b>Position:</b></label>
+            <select name="position">
+                <option value="" disabled selected>Select Position</option>
+                <option value="Manager">Manager</option>
+                <option value="Developer">Developer</option>
+                <option value="Designer">Designer</option>
+                <option value="Intern">Intern</option>
+            </select> <br><br>
 
-        <label><b>Date of Employment:</b></label>
-        <input type="date" name="dateOfEmployment"> <br> <br>
+            <label><b>Date of Employment:</b></label>
+            <input type="date" name="dateOfEmployment"> <br><br>
 
-        <button type="submit" name="addEmployee" class="btn btn-add">Add Employee</button>
-    </fieldset>
-</form>
+            <button type="submit" name="addEmployee" class="btn btn-add">
+                Add Employee
+            </button>
 
-<table>
-    <thead>
-        <tr>
-            <th>Full Name</th>
-            <th>Position</th>
-            <th>Date of Employment</th>
-            <th>Monthly Salary (₱)</th>
-            <th>Annual Bonus Rate</th>
-            <th>Annual Bonus (₱)</th>
-            <th>Annual Salary (₱)</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach ($_SESSION['employees'] as $index => $employee): ?>
-        <tr>
-            <?php if ($index === $editIndex): ?>
-                <form method="POST">
-                    <input type="hidden" name="updateIndex" value="<?php echo $index; ?>">
-                    <td><input type="text" name="fullname" value="<?php echo $employee->getFullName(); ?>"></td>
-                    <td>
-                        <select name="position">
-                            <?php foreach (['Manager','Developer','Designer','Intern'] as $position): ?>
-                                <option value="<?php echo $position; ?>" <?php echo $employee->getPosition() === $position ? 'selected' : ''; ?>>
-                                    <?php echo $position; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td><input type="date" name="dateOfEmployment" value="<?php echo $employee->getDateOfEmployment(); ?>"></td>
+        </fieldset>
+    </form>
+
+    <!-- Employee records table to display all stored employees -->
+    <table>
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>Position</th>
+                <th>Date of Employment</th>
+                <th>Monthly Salary (₱)</th>
+                <th>Annual Bonus Rate</th>
+                <th>Annual Bonus (₱)</th>
+                <th>Annual Salary (₱)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <!-- Loop through all employees stored in session -->
+            <?php foreach ($_SESSION['employees'] as $index => $employee): ?>
+            <tr>
+                <!-- If this row is in edit mode, show editable input fields -->
+                <?php if ($index === $editIndex): ?>
+                    <form method="POST">
+                        <input type="hidden" name="updateIndex" value="<?php echo $index; ?>">
+                        <td>
+                            <input type="text" name="fullname" 
+                            value="<?php echo $employee->getFullName(); ?>">
+                        </td>
+                        <td>
+                            <select name="position">
+                                <?php foreach (['Manager','Developer','Designer','Intern'] as $position): ?>
+                                    <option value="<?php echo $position; ?>"
+                                        <?php echo $employee->getPosition() === $position ? 'selected' : ''; ?>>
+                                        <?php echo $position; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="date" name="dateOfEmployment"
+                            value="<?php echo $employee->getDateOfEmployment(); ?>">
+                        </td>
+
+                        <!-- Computed values (not editable) -->
+                        <td>₱<?php echo number_format($employee->getSalary(), 2); ?></td>
+                        <td><?php echo ($employee->getBonusRate() * 100) . "%"; ?></td>
+                        <td>₱<?php echo number_format($employee->getAnnualBonus(), 2); ?></td>
+                        <td>₱<?php echo number_format($employee->getAnnualSalary(), 2); ?></td>
+
+                        <!-- Save button for updates -->
+                        <td>
+                            <button type="submit" class="btn btn-save">Save</button>
+                        </td>
+                    </form>
+                <?php else: ?>
+                    <!-- Displays all the employee data -->
+                    <td><?php echo $employee->getFullName(); ?></td>
+                    <td><?php echo $employee->getPosition(); ?></td>
+                    <td><?php echo $employee->getDateOfEmployment(); ?></td>
                     <td>₱<?php echo number_format($employee->getSalary(), 2); ?></td>
                     <td><?php echo ($employee->getBonusRate() * 100) . "%"; ?></td>
                     <td>₱<?php echo number_format($employee->getAnnualBonus(), 2); ?></td>
                     <td>₱<?php echo number_format($employee->getAnnualSalary(), 2); ?></td>
-                    <td>
-                        <button type="submit" class="btn btn-save">Save</button>
-                    </td>
-                </form>
-            <?php else: ?>
-                <td><?php echo $employee->getFullName(); ?></td>
-                <td><?php echo $employee->getPosition(); ?></td>
-                <td><?php echo $employee->getDateOfEmployment(); ?></td>
-                <td>₱<?php echo number_format($employee->getSalary(), 2); ?></td>
-                <td><?php echo ($employee->getBonusRate() * 100) . "%"; ?></td>
-                <td>₱<?php echo number_format($employee->getAnnualBonus(), 2); ?></td>
-                <td>₱<?php echo number_format($employee->getAnnualSalary(), 2); ?></td>
-                <td>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="editIndex" value="<?php echo $index; ?>">
-                        <button type="submit" class="btn btn-edit">Edit</button>
-                    </form>
-                    
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="deleteIndex" value="<?php echo $index; ?>">
-                        <button type="submit" class="btn btn-del">Delete</button>
-                    </form>
-                </td>
-            <?php endif; ?>
-        </tr>
-        <?php endforeach; ?>
-    </tbody>
-</table>
 
+                    <!-- Action buttons (Edit and Delete) -->
+                    <td>
+                        <!-- Edit button -->
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="editIndex" value="<?php echo $index; ?>">
+                            <button type="submit" class="btn btn-edit">Edit</button>
+                        </form>
+                        <!-- Delete button -->
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="deleteIndex" value="<?php echo $index; ?>">
+                            <button type="submit" class="btn btn-del">Delete</button>
+                        </form>
+                    </td>
+                <?php endif; ?>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 </body>
 </html>
